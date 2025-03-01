@@ -1,15 +1,17 @@
 import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'crypto';
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function main() {
   const hashedPassword = await bcrypt.hash('password123', 10);
-
+  const managerID = randomUUID();
   const manager = await prisma.user.upsert({
     where: { email: 'manager@example.com' },
     update: {},
     create: {
+      id: managerID,
       name: 'Production Manager',
       email: 'manager@example.com',
       password: hashedPassword,
@@ -38,6 +40,7 @@ async function main() {
       status: 'PENDING',
       assignedToId: operator.id,
       dueDate: new Date('2024-03-10T00:00:00Z'),
+      createdById: managerID,
     },
   });
 
@@ -49,6 +52,7 @@ async function main() {
       status: 'PENDING',
       assignedToId: operator.id,
       dueDate: new Date('2024-03-15T00:00:00Z'),
+      createdById: managerID,
     },
   });
 
