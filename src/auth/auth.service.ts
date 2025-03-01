@@ -37,7 +37,7 @@ export class AuthService {
     return this.prisma.user.create({
       data: {
         email,
-        name: '',
+        name,
         password: hashedPassword,
         role: role as any,
       },
