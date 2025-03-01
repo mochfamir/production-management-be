@@ -6,6 +6,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { WorkOrderModule } from './work-order/work-order.module';
+import { OperatorModule } from './operator/operator.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { WorkOrderModule } from './work-order/work-order.module';
     AuthModule,
     WorkOrderModule,
     PrismaModule,
+    OperatorModule,
   ],
   controllers: [AppController],
   providers: [
