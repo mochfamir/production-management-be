@@ -1,62 +1,54 @@
-import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
-const bcrypt = require('bcryptjs');
+import { PrismaClient, Role, WorkOrderStatus, ProductionStage } from "@prisma/client";
+import { faker } from "@faker-js/faker";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const hashedPassword = await bcrypt.hash('password123', 10);
-  const managerID = randomUUID();
+  console.log("🌱 Seeding database...");
+
   const manager = await prisma.user.upsert({
-    where: { email: 'manager@example.com' },
+    where: { email: "manager@example.com" },
     update: {},
     create: {
-      id: managerID,
-      name: 'Production Manager',
-      email: 'manager@example.com',
-      password: hashedPassword,
-      role: 'MANAGER',
+      name: "Manager",
+      email: "manager@example.com",
+      password: "hashedpassword123",
+      role: Role.MANAGER,
     },
   });
 
   const operator = await prisma.user.upsert({
-    where: { email: 'operator@example.com' },
+    where: { email: "operator@example.com" },
     update: {},
     create: {
-      name: 'Operator 1',
-      email: 'operator@example.com',
-      password: hashedPassword,
-      role: 'OPERATOR',
+      name: "Operator",
+      email: "operator@example.com",
+      password: "hashedpassword123",
+      role: Role.OPERATOR,
     },
   });
 
-  console.log('✅ Seeded Users:', { manager, operator });
+  console.log("✅ Created Users:", { manager, operator });
 
-  const workOrder1 = await prisma.workOrder.create({
-    data: {
-      number: 'WO-20240301-001',
-      productName: 'Product A',
-      quantity: 100,
-      status: 'PENDING',
-      assignedToId: operator.id,
-      dueDate: new Date('2024-03-10T00:00:00Z'),
-      createdById: managerID,
-    },
-  });
+  const workOrders = await Promise.all(
+    Array.from({ length: 30 }).map(async (_, index) => {
+      return prisma.workOrder.create({
+        data: {
+          number: `WO-${1000 + index}`,
+          productName: faker.commerce.productName(),
+          quantity: faker.number.int({ min: 1, max: 500 }),
+          status: faker.helpers.arrayElement(Object.values(WorkOrderStatus)),
+          assignedToId: operator.id,
+          createdById: manager.id,
+          dueDate: faker.date.future(),
+        },
+      });
+    })
+  );
 
-  const workOrder2 = await prisma.workOrder.create({
-    data: {
-      number: 'WO-20240301-002',
-      productName: 'Product B',
-      quantity: 200,
-      status: 'PENDING',
-      assignedToId: operator.id,
-      dueDate: new Date('2024-03-15T00:00:00Z'),
-      createdById: managerID,
-    },
-  });
+  console.log(`✅ Created ${workOrders.length} Work Orders`);
 
-  console.log('✅ Seeded Work Orders:', { workOrder1, workOrder2 });
+  console.log("🎉 Database seeding completed!");
 }
 
 main()
