@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
   Get,
   UseGuards,
-  Request
+  Request,
 } from '@nestjs/common'; // Import UnauthorizedException
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -20,14 +20,14 @@ export class AuthController {
     body: {
       email: string;
       password: string;
-      role: string;
+      role?: string;
       name: string;
     },
   ) {
     return this.authService.register(
       body.email,
       body.password,
-      body.role,
+      body.role || 'OPERATOR',
       body.name,
     );
   }
