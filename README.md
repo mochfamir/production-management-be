@@ -209,7 +209,7 @@ npx prisma migrate deploy
 ## Live Demo
 A live demo of this application is deployed on Koyeb. You can access it here:
 
-[Live Endpoint Link](phttps://promising-shelagh-sandbox-faishal-9b7080d8.koyeb.app)
+[Live Endpoint Link](https://promising-shelagh-sandbox-faishal-9b7080d8.koyeb.app)
 
 ## Contributing
 We welcome contributions! To contribute:
