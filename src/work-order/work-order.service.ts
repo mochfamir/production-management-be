@@ -32,7 +32,12 @@ export class WorkOrderService {
   }
 
   // Production Manager & Operator: Get All Work Orders
-  async findAll(filterParams?: any[] | null, limit?: number, user?: any) {
+  async findAll(
+    filterParams?: any[] | null,
+    limit?: number,
+    page?: number,
+    user?: any,
+  ) {
     const filters = {};
 
     if (filterParams?.length) {
@@ -49,9 +54,14 @@ export class WorkOrderService {
       filters['assignedToId'] = user.userId;
     }
 
+    const totalWorkOrders = await this.prisma.workOrder.count({
+      where: filters,
+    });
+
     const workOrders = await this.prisma.workOrder.findMany({
       where: filters,
-      take: Number(limit) || undefined,
+      take: limit || undefined,
+      skip: ((page || 1) - 1) * (limit || 10),
       include: {
         logs: {
           orderBy: {
@@ -61,10 +71,15 @@ export class WorkOrderService {
       },
     });
 
-    return workOrders.map((wO) => ({
-      ...wO,
-      quantity: wO.logs[0].quantityUpdated,
-    }));
+    console.log(workOrders);
+
+    return {
+      data: workOrders.map((wO) => ({
+        ...wO,
+        quantity: wO?.logs?.[0]?.quantityUpdated || wO.quantity,
+      })),
+      total: totalWorkOrders,
+    };
   }
 
   // Production Manager & Operator: Get Work Order by ID
@@ -81,9 +96,12 @@ export class WorkOrderService {
     });
     if (!workOrder) throw new NotFoundException('Work Order not found');
 
-    const newestLogs = workOrder.logs[0];
+    const newestLogs = workOrder?.logs?.[0];
 
-    return { ...workOrder, quantity: newestLogs.quantityUpdated };
+    return {
+      ...workOrder,
+      quantity: newestLogs?.quantityUpdated || workOrder.quantity,
+    };
   }
 
   // Production Manager: Update Work Order

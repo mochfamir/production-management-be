@@ -36,13 +36,16 @@ export class WorkOrderController {
   @Roles('MANAGER', 'OPERATOR')
   findAll(
     @Query('filters') filters?: string,
-    @Query('limit') limit?: number,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
     @Request() req?,
   ) {
+    const _limit = Number(limit || 10);
+    const _page = Number(page || 1);
     const filterParams = filters
       ? parseQueryStringToFilters(filters as string)
       : null;
-    return this.workOrderService.findAll(filterParams, limit, req.user);
+    return this.workOrderService.findAll(filterParams, _limit, _page, req.user);
   }
 
   // Production Manager & Operator: Get Work Order by ID
