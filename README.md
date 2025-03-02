@@ -1,99 +1,231 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Production Management (BE)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Project Description
+A NestJS-based backend application featuring JWT authentication, role-based access control (RBAC), and database management using Prisma.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Database Setup with Prisma](#database-setup-with-prisma)
+- [Running the Application](#running-the-application)
+- [API Endpoints](#api-endpoints)
+- [Deployment](#deployment)
+- [Live Demo](#live-demo)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Description
+## Prerequisites
+Before getting started, ensure you have the following installed:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Node.js** (v16 or higher): [Download Node.js](https://nodejs.org/)
+- **Yarn or npm**: [Install Yarn](https://yarnpkg.com/getting-started/install)
+- **Prisma CLI**: Install globally using:
+  ```bash
+  npm install -g prisma
+  ```
+- **Database**: PostgreSQL (or any other database supported by Prisma).
 
-## Project setup
+## Installation
 
+### Clone Repository:
 ```bash
-$ yarn install
+git clone https://github.com/mochfamir/production-management-be.git
+cd production-management-be
 ```
 
-## Compile and run the project
-
+### Install Dependencies:
+Using Yarn:
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+yarn install
+```
+Or using npm:
+```bash
+npm install
 ```
 
-## Run tests
-
+### Create `.env` File:
+Copy the `.env.example` file to `.env` and fill in the required values:
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+cp .env.example .env
 ```
+Example `.env` content:
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE_NAME?schema=public"
+JWT_SECRET="your-secret-key"
+PORT=3000
+```
+
+## Database Setup with Prisma
+
+### Push Schema to Database:
+Run the following command to apply the schema to your database:
+```bash
+npx prisma db push
+```
+
+### Generate Prisma Client:
+```bash
+npx prisma generate
+```
+
+### Seed Data (Optional):
+If you want to populate the database with initial data, run the seed script:
+```bash
+npx prisma db seed
+```
+
+## Running the Application
+
+### Development Mode:
+```bash
+yarn start:dev
+```
+
+### Production Build:
+```bash
+yarn build
+yarn start
+```
+
+### Linting and Formatting:
+```bash
+yarn lint
+yarn format
+```
+
+## API Endpoints
+
+### Authentication
+#### `POST /auth/register` - Register a new user
+**Body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "name": "John Doe",
+  "role": "USER"
+}
+```
+
+#### `POST /auth/login` - Login and get a JWT token
+**Body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+#### `GET /auth/verify` - Verify the token and retrieve user data
+**Header:**
+```http
+Authorization: Bearer <token>
+```
+
+### Work Orders
+#### `GET /work-orders` - Get all work orders (with optional filters)
+**Query Params:**
+```http
+?status=IN_PROGRESS&limit=10
+```
+
+#### `POST /work-orders` - Create a new work order
+**Header:**
+```http
+Authorization: Bearer <token>
+```
+**Body:**
+```json
+{
+  "productName": "Product A",
+  "quantity": 100,
+  "dueDate": "2025-01-01T00:00:00Z"
+}
+```
+
+#### `GET /work-orders/:id` - Get a work order by ID
+**Header:**
+```http
+Authorization: Bearer <token>
+```
+
+#### `PATCH /work-orders/:id` - Update a work order
+**Header:**
+```http
+Authorization: Bearer <token>
+```
+**Body:**
+```json
+{
+  "productName": "Updated Product",
+  "quantity": 200
+}
+```
+
+#### `DELETE /work-orders/:id` - Delete a work order
+**Header:**
+```http
+Authorization: Bearer <token>
+```
+
+#### `PATCH /work-orders/:id/status` - Update work order status
+**Header:**
+```http
+Authorization: Bearer <token>
+```
+**Body:**
+```json
+{
+  "status": "COMPLETED"
+}
+```
+
+### Operators
+#### `GET /operators` - Get all operators
+**Header:**
+```http
+Authorization: Bearer <token>
+```
+
+
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Deploy to Koyeb
+1. Sign up for [Koyeb](https://www.koyeb.com/)
+2. Connect your GitHub repository to Koyeb.
+3. Set environment variables in the Koyeb dashboard (e.g., `DATABASE_URL`, `JWT_SECRET`).
+4. Deploy the application.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Environment Variables
+Add your `.env` variables to the deployment platform (e.g., Koyeb Dashboard).
 
+### Database Migration
+Ensure migrations are applied during deployment:
 ```bash
-$ yarn install -g mau
-$ mau deploy
+npx prisma migrate deploy
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Live Demo
+A live demo of this application is deployed on Koyeb. You can access it here:
 
-## Resources
+[Live Endpoint Link](phttps://promising-shelagh-sandbox-faishal-9b7080d8.koyeb.app)
 
-Check out a few resources that may come in handy when working with NestJS:
+## Contributing
+We welcome contributions! To contribute:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+1. Fork this repository.
+2. Create a new branch:
+   ```bash
+   git checkout -b feature/YourFeatureName
+   ```
+3. Commit your changes:
+   ```bash
+   git commit -m 'Add some feature'
+   ```
+4. Push to the branch:
+   ```bash
+   git push origin feature/YourFeatureName
+   ```
+5. Open a pull request.
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
