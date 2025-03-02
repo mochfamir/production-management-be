@@ -7,6 +7,8 @@ import {
   Patch,
   Delete,
   UseGuards,
+  Request,
+  Query,
 } from '@nestjs/common';
 import { Roles } from 'src/roles/roles.decorator';
 import { WorkOrderService } from './work-order.service';
@@ -15,6 +17,7 @@ import { UpdateWorkOrderStatusDto } from './dto/update-work-order-status.dto';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { GetUser } from 'src/auth/get-user.decorator';
 import { AuthGuard } from '@nestjs/passport';
+import { parseQueryStringToFilters } from 'src/utils/query-to-filter';
 
 @Controller('work-orders')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -25,15 +28,21 @@ export class WorkOrderController {
   @Post()
   @Roles('MANAGER')
   create(@Body() createWorkOrderDto: CreateWorkOrderDto, @GetUser() user: any) {
-    console.log('User:', user);
     return this.workOrderService.create(createWorkOrderDto, user.userId);
   }
 
   // Production Manager & Operator: Get All Work Orders
   @Get()
   @Roles('MANAGER', 'OPERATOR')
-  findAll() {
-    return this.workOrderService.findAll();
+  findAll(
+    @Query('filters') filters?: string,
+    @Query('limit') limit?: number,
+    @Request() req?,
+  ) {
+    const filterParams = filters
+      ? parseQueryStringToFilters(filters as string)
+      : null;
+    return this.workOrderService.findAll(filterParams, limit, req.user);
   }
 
   // Production Manager & Operator: Get Work Order by ID
@@ -71,7 +80,7 @@ export class WorkOrderController {
     return this.workOrderService.updateStatus(
       id,
       updateWorkOrderStatusDto,
-      user.id,
+      user.userId,
     );
   }
 }

@@ -15,25 +15,75 @@ export class WorkOrderService {
     )
       .toString()
       .padStart(3, '0')}`;
+
     return this.prisma.workOrder.create({
       data: {
         ...createWorkOrderDto,
         number,
         createdById,
+        logs: {
+          create: {
+            quantityUpdated: createWorkOrderDto.quantity,
+            status: createWorkOrderDto.status || 'PENDING',
+          },
+        },
       },
     });
   }
 
   // Production Manager & Operator: Get All Work Orders
-  async findAll() {
-    return this.prisma.workOrder.findMany();
+  async findAll(filterParams?: any[] | null, limit?: number, user?: any) {
+    const filters = {};
+
+    if (filterParams?.length) {
+      filterParams.forEach((item) => {
+        item.operator === 'eq'
+          ? (filters[item.field] = item.value)
+          : (filters[item.field] = {
+              [item.operator]: item.value,
+            });
+      });
+    }
+
+    if (user.role === 'OPERATOR') {
+      filters['assignedToId'] = user.userId;
+    }
+
+    const workOrders = await this.prisma.workOrder.findMany({
+      where: filters,
+      take: Number(limit) || undefined,
+      include: {
+        logs: {
+          orderBy: {
+            timestamp: 'desc',
+          },
+        },
+      },
+    });
+
+    return workOrders.map((wO) => ({
+      ...wO,
+      quantity: wO.logs[0].quantityUpdated,
+    }));
   }
 
   // Production Manager & Operator: Get Work Order by ID
   async findOne(id: string) {
-    const workOrder = await this.prisma.workOrder.findUnique({ where: { id } });
+    const workOrder = await this.prisma.workOrder.findUnique({
+      where: { id },
+      include: {
+        logs: {
+          orderBy: {
+            timestamp: 'desc',
+          },
+        },
+      },
+    });
     if (!workOrder) throw new NotFoundException('Work Order not found');
-    return workOrder;
+
+    const newestLogs = workOrder.logs[0];
+
+    return { ...workOrder, quantity: newestLogs.quantityUpdated };
   }
 
   // Production Manager: Update Work Order
@@ -41,9 +91,22 @@ export class WorkOrderService {
     const workOrder = await this.prisma.workOrder.findUnique({ where: { id } });
     if (!workOrder) throw new NotFoundException('Work Order not found');
 
+    const status = updateWorkOrderDto.status;
+
     return this.prisma.workOrder.update({
       where: { id },
-      data: updateWorkOrderDto,
+      data: {
+        ...updateWorkOrderDto,
+        logs: {
+          create: {
+            quantityUpdated:
+              status !== Status.CANCELED
+                ? updateWorkOrderDto.quantity || workOrder.quantity
+                : workOrder.quantity,
+            status: updateWorkOrderDto.status || workOrder.status,
+          },
+        },
+      },
     });
   }
 
@@ -61,7 +124,21 @@ export class WorkOrderService {
     updateWorkOrderStatusDto: UpdateWorkOrderStatusDto,
     userId: string,
   ) {
-    const workOrder = await this.prisma.workOrder.findUnique({ where: { id } });
+    const workOrder = await this.prisma.workOrder.findUnique({
+      where: { id },
+      include: {
+        logs: {
+          where: {
+            status: {
+              equals: Status.IN_PROGRESS,
+            },
+          },
+          orderBy: {
+            timestamp: 'asc',
+          },
+        },
+      },
+    });
     if (!workOrder) throw new NotFoundException('Work Order not found');
 
     if (workOrder.assignedToId !== userId) {
@@ -69,17 +146,39 @@ export class WorkOrderService {
     }
 
     if (
-      (workOrder.status === Status.PENDING &&
+      !updateWorkOrderStatusDto.productionStage &&
+      ((workOrder.status === Status.PENDING &&
         updateWorkOrderStatusDto.status !== Status.IN_PROGRESS) ||
-      (workOrder.status === Status.IN_PROGRESS &&
-        updateWorkOrderStatusDto.status !== Status.COMPLETED)
+        (workOrder.status === Status.IN_PROGRESS &&
+          updateWorkOrderStatusDto.status !== Status.COMPLETED))
     ) {
       throw new NotFoundException('Invalid status transition');
     }
 
+    const logUpdate = {
+      status: updateWorkOrderStatusDto.status,
+      quantityUpdated: updateWorkOrderStatusDto.quantity,
+      note: updateWorkOrderStatusDto.note || '',
+    };
+
+    if (
+      workOrder.status === Status.IN_PROGRESS &&
+      updateWorkOrderStatusDto.productionStage
+    ) {
+      logUpdate['productionStage'] = updateWorkOrderStatusDto.productionStage;
+      logUpdate['quantityUpdated'] = workOrder.logs[0].quantityUpdated;
+    }
+
     return this.prisma.workOrder.update({
       where: { id },
-      data: { status: updateWorkOrderStatusDto.status },
+      data: {
+        status: updateWorkOrderStatusDto.status,
+        logs: {
+          create: {
+            ...logUpdate,
+          },
+        },
+      },
     });
   }
 }

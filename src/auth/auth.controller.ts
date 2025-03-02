@@ -1,5 +1,14 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common'; // Import UnauthorizedException
+import {
+  Controller,
+  Post,
+  Body,
+  UnauthorizedException,
+  Get,
+  UseGuards,
+  Request
+} from '@nestjs/common'; // Import UnauthorizedException
 import { AuthService } from './auth.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -28,5 +37,15 @@ export class AuthController {
     const user = await this.authService.validateUser(body.email, body.password);
     if (!user) throw new UnauthorizedException('Invalid credentials'); // Gunakan UnauthorizedException
     return this.authService.login(user);
+  }
+
+  @Get('verify')
+  @UseGuards(AuthGuard('jwt')) // Gunakan AuthGuard('jwt') untuk memvalidasi token
+  verifyToken(@Request() req) {
+    // Data pengguna tersedia di req.user setelah token divalidasi
+    return {
+      message: 'Token is valid',
+      user: req.user, // Kembalikan data pengguna dari token
+    };
   }
 }

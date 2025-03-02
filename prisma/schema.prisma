@@ -19,6 +19,15 @@ enum WorkOrderStatus {
   CANCELED
 }
 
+enum ProductionStage {
+  MATERIAL_PREPARATION
+  CUTTING
+  ASSEMBLY
+  PAINTING
+  QUALITY_CONTROL
+  PACKAGING
+}
+
 model User {
   id                 String      @id @default(uuid())
   name               String
@@ -33,16 +42,16 @@ model User {
 }
 
 model WorkOrder {
-  id           String          @id @default(uuid())
-  number       String          @unique
-  productName  String
-  quantity     Int
-  status       WorkOrderStatus @default(PENDING)
-  assignedTo   User?           @relation("OperatorWorkOrders", fields: [assignedToId], references: [id])
-  assignedToId String?
-  createdBy    User            @relation("CreatorWorkOrders", fields: [createdById], references: [id])
-  createdById  String
-  dueDate      DateTime
+  id                String          @id @default(uuid())
+  number            String          @unique
+  productName       String
+  quantity          Int
+  status            WorkOrderStatus @default(PENDING)
+  assignedTo        User?           @relation("OperatorWorkOrders", fields: [assignedToId], references: [id])
+  assignedToId      String?
+  createdBy         User            @relation("CreatorWorkOrders", fields: [createdById], references: [id])
+  createdById       String
+  dueDate           DateTime
 
   logs WorkOrderLog[]
 
@@ -51,11 +60,13 @@ model WorkOrder {
 }
 
 model WorkOrderLog {
-  id              String          @id @default(uuid())
-  workOrder       WorkOrder       @relation(fields: [workOrderId], references: [id])
+  id              String           @id @default(uuid())
+  workOrder       WorkOrder        @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   workOrderId     String
   status          WorkOrderStatus
+  productionStage ProductionStage?
+
   quantityUpdated Int
   note            String?
-  timestamp       DateTime        @default(now())
+  timestamp       DateTime @default(now())
 }
